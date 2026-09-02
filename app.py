@@ -125,4 +125,4 @@ elif job_description.strip() != "":
 
 # Footer
 st.markdown("---")
-st.caption("Built as Final Year BCA Honors Project | AI Resume Analyzer & Job Matcher")
+st.caption("BCA Honors Project | AI Resume Analyzer & Job Matcher Archit sharma")
