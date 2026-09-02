@@ -1,20 +1,18 @@
-def get_feedback(score):
+def get_feedback(score, missing_skills):
     if score >= 75:
-        return {
-            "level": "Excellent Match",
-            "message": "Your resume strongly matches this role. Highlight projects and quantify results even more."
-        }
+        level = "Excellent Match"
+        message = "Your resume is strongly aligned with this job. Keep polishing projects and quantified achievements."
     elif score >= 50:
-        return {
-            "level": "Moderate Match",
-            "message": "Good base, but add missing skills, stronger action verbs, and keywords from the job description."
-        }
+        level = "Moderate Match"
+        message = "Your resume partially matches. Add missing skills and mirror keywords from the job description."
     else:
-        return {
-            "level": "Low Match",
-            "message": "Weak overlap. Rewrite skills and experience to mirror the job description more closely."
-        }
+        level = "Low Match"
+        message = "Low overlap with the job description. Update skills, tools, and experience based on the role."
 
+    if missing_skills:
+        message += f" Priority skills to add: {', '.join(missing_skills[:5])}."
+
+    return {"level": level, "message": message}
 
 def format_skills(skills):
     if not skills:

@@ -1,6 +1,6 @@
 import streamlit as st
 from utils.parser import extract_text
-from utils.matcher import get_match_score, get_skill_gap, get_keyword_score
+from utils.matcher import get_match_score, get_skill_gap
 from utils.extractor import extract_basic_info
 from utils.scorer import get_feedback, format_skills
 
@@ -10,223 +10,188 @@ st.set_page_config(
     layout="wide"
 )
 
-# ---------- Custom CSS ----------
+# Custom CSS
 st.markdown("""
 <style>
+    .main {
+        background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+    }
     .stApp {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 45%, #0f766e 100%);
+        background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
         color: #e2e8f0;
     }
     h1, h2, h3, h4 {
         color: #f8fafc !important;
     }
-    .main-title {
-        font-size: 2.4rem;
-        font-weight: 800;
-        margin-bottom: 0.2rem;
-    }
-    .subtitle {
-        color: #94a3b8;
-        margin-bottom: 1.5rem;
-    }
-    .card {
-        background: rgba(15, 23, 42, 0.75);
-        border: 1px solid rgba(148, 163, 184, 0.25);
+    .metric-card {
+        background: #1e293b;
+        border: 1px solid #334155;
         border-radius: 16px;
-        padding: 1.2rem 1.4rem;
-        margin-bottom: 1rem;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-    }
-    .score-big {
-        font-size: 3rem;
-        font-weight: 800;
-        color: #2dd4bf;
-        line-height: 1;
-    }
-    .label {
-        color: #94a3b8;
-        font-size: 0.9rem;
+        padding: 18px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.25);
     }
     .skill-chip {
         display: inline-block;
-        padding: 0.35rem 0.75rem;
-        margin: 0.25rem;
+        padding: 6px 12px;
+        margin: 4px;
         border-radius: 999px;
-        font-size: 0.85rem;
+        font-size: 13px;
         font-weight: 600;
     }
-    .skill-ok {
-        background: rgba(16, 185, 129, 0.15);
-        color: #34d399;
-        border: 1px solid rgba(52, 211, 153, 0.35);
+    .chip-ok {
+        background: rgba(34,197,94,0.15);
+        color: #4ade80;
+        border: 1px solid rgba(34,197,94,0.35);
     }
-    .skill-missing {
-        background: rgba(244, 63, 94, 0.12);
-        color: #fb7185;
-        border: 1px solid rgba(251, 113, 133, 0.35);
+    .chip-missing {
+        background: rgba(239,68,68,0.15);
+        color: #f87171;
+        border: 1px solid rgba(239,68,68,0.35);
     }
-    .skill-extra {
-        background: rgba(56, 189, 248, 0.12);
-        color: #7dd3fc;
-        border: 1px solid rgba(125, 211, 252, 0.35);
+    .chip-extra {
+        background: rgba(59,130,246,0.15);
+        color: #60a5fa;
+        border: 1px solid rgba(59,130,246,0.35);
     }
     .info-box {
-        background: rgba(30, 41, 59, 0.9);
-        border-radius: 12px;
-        padding: 0.8rem 1rem;
-        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 14px;
+        padding: 16px;
     }
-    section[data-testid="stSidebar"] {
-        background: #0b1220;
-    }
-    .stTextArea textarea, .stTextInput input {
-        background-color: #0b1220 !important;
-        color: #e2e8f0 !important;
+    div[data-testid="stMetricValue"] {
+        color: #38bdf8 !important;
+        font-size: 2rem !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# ---------- Sidebar ----------
 with st.sidebar:
-    st.markdown("### How to use")
-    st.write("1. Upload resume (PDF/DOCX)")
-    st.write("2. Paste job description")
-    st.write("3. Click **Analyze Resume**")
+    st.markdown("## 📄 Resume Analyzer")
+    st.write("Upload a resume and paste a job description to get AI match analysis.")
     st.markdown("---")
-    st.write("Uses Sentence Transformers for semantic matching + skill gap analysis.")
+    st.markdown("### Features")
+    st.write("- Semantic match score")
+    st.write("- Skill gap detection")
+    st.write("- Contact extraction")
+    st.write("- ATS-style feedback")
+    st.write("- Downloadable report")
     st.markdown("---")
     st.caption("Final Year BCA Honors Project")
 
-# ---------- Header ----------
-st.markdown('<div class="main-title">AI Resume Analyzer</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Smart matching • Skill gap detection • ATS-style feedback</div>', unsafe_allow_html=True)
+st.title("AI Resume Analyzer & Job Matcher")
+st.markdown("### Smart resume screening powered by NLP + embeddings")
 
-# ---------- Inputs ----------
 col_a, col_b = st.columns([1, 1])
 
 with col_a:
-    st.markdown("#### Upload Resume")
-    uploaded_file = st.file_uploader("PDF or DOCX", type=["pdf", "docx"], label_visibility="collapsed")
+    uploaded_file = st.file_uploader("Upload Resume (PDF / DOCX)", type=["pdf", "docx"])
 
 with col_b:
-    st.markdown("#### Job Description")
-    job_description = st.text_area("Paste JD", height=180, label_visibility="collapsed",
-                                   placeholder="Paste the complete job description here...")
+    st.markdown("#### Quick Tips")
+    st.info("Use a text-based PDF (not scanned image). Paste a full job description for better skill matching.")
 
-analyze = st.button("Analyze Resume", use_container_width=True, type="primary")
+job_description = st.text_area("Paste Job Description", height=180, placeholder="Paste complete job description here...")
 
-if analyze:
+analyze_btn = st.button("🔍 Analyze Resume", use_container_width=True)
+
+if analyze_btn:
     if uploaded_file is None:
         st.warning("Please upload a resume.")
-    elif not job_description.strip():
+    elif job_description.strip() == "":
         st.warning("Please paste a job description.")
     else:
-        with st.spinner("Analyzing with AI... please wait"):
+        with st.spinner("Analyzing resume with AI... please wait"):
             resume_text = extract_text(uploaded_file)
             score = get_match_score(resume_text, job_description)
-            matched, missing, extra = get_skill_gap(resume_text, job_description)
-            keyword_score = get_keyword_score(resume_text, job_description)
+            matched_skills, missing_skills, extra_skills = get_skill_gap(resume_text, job_description)
             basic_info = extract_basic_info(resume_text)
-            feedback = get_feedback(score)
+            feedback = get_feedback(score, missing_skills)
 
         st.success("Analysis complete")
 
-        # Top metrics
-        m1, m2, m3, m4 = st.columns(4)
-        with m1:
-            st.markdown(f'<div class="card"><div class="label">Match Score</div><div class="score-big">{score}%</div></div>', unsafe_allow_html=True)
-        with m2:
-            st.markdown(f'<div class="card"><div class="label">Skill Match</div><div class="score-big">{keyword_score}%</div></div>', unsafe_allow_html=True)
-        with m3:
-            st.markdown(f'<div class="card"><div class="label">Matched Skills</div><div class="score-big">{len(matched)}</div></div>', unsafe_allow_html=True)
-        with m4:
-            st.markdown(f'<div class="card"><div class="label">Missing Skills</div><div class="score-big">{len(missing)}</div></div>', unsafe_allow_html=True)
-
-        st.progress(min(score / 100, 1.0))
-
         # Candidate info
-        st.markdown("### Candidate Information")
+        st.markdown("## Candidate Profile")
         c1, c2, c3 = st.columns(3)
         with c1:
-            st.markdown(f'<div class="info-box"><b>Name</b><br>{basic_info["name"]}</div>', unsafe_allow_html=True)
+            st.markdown(f"<div class='info-box'><b>Name</b><br>{basic_info['name']}</div>", unsafe_allow_html=True)
         with c2:
-            st.markdown(f'<div class="info-box"><b>Email</b><br>{basic_info["email"]}</div>', unsafe_allow_html=True)
+            st.markdown(f"<div class='info-box'><b>Email</b><br>{basic_info['email']}</div>", unsafe_allow_html=True)
         with c3:
-            st.markdown(f'<div class="info-box"><b>Phone</b><br>{basic_info["phone"]}</div>', unsafe_allow_html=True)
+            st.markdown(f"<div class='info-box'><b>Phone</b><br>{basic_info['phone']}</div>", unsafe_allow_html=True)
+
+        st.markdown("## Match Score")
+        m1, m2 = st.columns([1, 2])
+        with m1:
+            st.metric("Overall Match", f"{score}%")
+        with m2:
+            if score >= 75:
+                st.success(feedback["level"])
+            elif score >= 50:
+                st.warning(feedback["level"])
+            else:
+                st.error(feedback["level"])
+            st.progress(min(score / 100, 1.0))
 
         # Skills
-        st.markdown("### Skills Analysis")
-        s1, s2 = st.columns(2)
+        st.markdown("## Skills Intelligence")
+        s1, s2, s3 = st.columns(3)
 
         with s1:
-            st.markdown("#### Matched Skills")
-            if matched:
-                chips = " ".join([f'<span class="skill-chip skill-ok">{s}</span>' for s in matched])
+            st.markdown("### Matched Skills")
+            if matched_skills:
+                chips = "".join([f"<span class='skill-chip chip-ok'>{s}</span>" for s in matched_skills])
                 st.markdown(chips, unsafe_allow_html=True)
             else:
-                st.info("No matched skills found. Try a more detailed job description.")
+                st.write("No matched skills found")
 
         with s2:
-            st.markdown("#### Missing Skills")
-            if missing:
-                chips = " ".join([f'<span class="skill-chip skill-missing">{s}</span>' for s in missing])
+            st.markdown("### Missing Skills")
+            if missing_skills:
+                chips = "".join([f"<span class='skill-chip chip-missing'>{s}</span>" for s in missing_skills])
                 st.markdown(chips, unsafe_allow_html=True)
             else:
-                st.success("No major missing skills.")
+                st.write("No missing skills")
 
-        if extra:
-            st.markdown("#### Extra skills on resume")
-            chips = " ".join([f'<span class="skill-chip skill-extra">{s}</span>' for s in extra])
-            st.markdown(chips, unsafe_allow_html=True)
+        with s3:
+            st.markdown("### Extra Skills")
+            if extra_skills:
+                chips = "".join([f"<span class='skill-chip chip-extra'>{s}</span>" for s in extra_skills])
+                st.markdown(chips, unsafe_allow_html=True)
+            else:
+                st.write("No extra skills")
 
-        # Feedback
-        st.markdown("### Feedback")
+        st.markdown("## Personalized Feedback")
         if score >= 75:
-            st.success(f"**{feedback['level']}** — {feedback['message']}")
+            st.success(feedback["message"])
         elif score >= 50:
-            st.warning(f"**{feedback['level']}** — {feedback['message']}")
+            st.warning(feedback["message"])
         else:
-            st.error(f"**{feedback['level']}** — {feedback['message']}")
+            st.error(feedback["message"])
 
-        tips = []
-        if missing:
-            tips.append("Add these missing skills if you truly have them: " + ", ".join(missing[:5]))
-        if basic_info["phone"] == "Not found":
-            tips.append("Add a phone number near the top of your resume.")
-        if basic_info["email"] == "Not found":
-            tips.append("Add a professional email address.")
-        tips.append("Use strong action verbs: Built, Developed, Designed, Improved, Delivered.")
-        tips.append("Mirror important keywords from the job description in your skills and project bullets.")
-
-        st.markdown("### Improvement Tips")
-        for t in tips:
-            st.write(f"- {t}")
-
-        # Report download
+        # Report
         report = f"""AI Resume Analyzer Report
 ==============================
 Name: {basic_info['name']}
 Email: {basic_info['email']}
 Phone: {basic_info['phone']}
-
 Match Score: {score}%
-Skill Match: {keyword_score}%
 Level: {feedback['level']}
 
 Matched Skills:
-{format_skills(matched)}
+{format_skills(matched_skills)}
 
 Missing Skills:
-{format_skills(missing)}
+{format_skills(missing_skills)}
 
 Extra Skills:
-{format_skills(extra)}
+{format_skills(extra_skills)}
 
 Feedback:
 {feedback['message']}
 """
         st.download_button(
-            "Download Analysis Report",
+            label="⬇️ Download Analysis Report",
             data=report,
             file_name="resume_analysis_report.txt",
             mime="text/plain",
