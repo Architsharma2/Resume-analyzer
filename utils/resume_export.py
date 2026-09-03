@@ -1,165 +1,214 @@
 from io import BytesIO
 from docx import Document
-from docx.shared import Pt, Inches
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from fpdf import FPDF
+from docx.shared import Pt, Inches, RGBColor, Twips
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
 
 
-def build_resume_text(data):
-    skills = [s.strip() for s in data.get("skills", "").split(",") if s.strip()]
-    soft_skills = [s.strip() for s in data.get("soft_skills", "").split(",") if s.strip()]
-    projects = [p.strip() for p in data.get("projects", "").split("\n") if p.strip()]
-    experience = [e.strip() for e in data.get("experience", "").split("\n") if e.strip()]
-    certifications = [c.strip() for c in data.get("certifications", "").split("\n") if c.strip()]
-    achievements = [a.strip() for a in data.get("achievements", "").split("\n") if a.strip()]
-    languages = [l.strip() for l in data.get("languages", "").split(",") if l.strip()]
+BLUE = RGBColor(31, 78, 121)
+DARK = RGBColor(35, 35, 35)
+GRAY = RGBColor(90, 90, 90)
 
-    summary = data.get("summary", "").strip()
-    if not summary:
-        top = ", ".join(skills[:5]) if skills else "software development"
-        summary = (
-            f"Motivated {data.get('role', 'Software')} aspirant skilled in {top}. "
-            f"Focused on building practical projects and continuous learning."
-        )
 
-    header_contact = " | ".join(
-        [x for x in [data.get("email", ""), data.get("phone", ""), data.get("location", ""), data.get("links", "")] if x]
-    )
+def set_run(run, size=10.5, bold=False, color=DARK, name="Calibri"):
+    run.font.name = name
+    run._element.rPr.rFonts.set(qn("w:eastAsia"), name)
+    run.font.size = Pt(size)
+    run.bold = bold
+    run.font.color.rgb = color
 
-    lines = [
-        data.get("name", "").upper(),
-        f"{data.get('role', '')}  ·  {header_contact}",
-        "",
-        "PROFESSIONAL SUMMARY",
-        summary,
-        "",
-        "TECHNICAL SKILLS",
-        " • ".join(skills) if skills else "-",
-    ]
 
-    if soft_skills:
-        lines += ["", "SOFT SKILLS", " • ".join(soft_skills)]
+def add_bottom_line(paragraph, color="1F4E79"):
+    pPr = paragraph._p.get_or_add_pPr()
+    pBdr = OxmlElement("w:pBdr")
+    bottom = OxmlElement("w:bottom")
+    bottom.set(qn("w:val"), "single")
+    bottom.set(qn("w:sz"), "10")
+    bottom.set(qn("w:space"), "1")
+    bottom.set(qn("w:color"), color)
+    pBdr.append(bottom)
+    pPr.append(pBdr)
 
-    lines += ["", "PROJECTS"]
-    lines += [f"• {p}" for p in projects] if projects else ["• Add projects"]
 
-    lines += ["", "EXPERIENCE"]
-    lines += [f"• {e}" for e in experience] if experience else ["• Fresher / Academic projects"]
+def section_heading(doc, text):
+    p = doc.add_paragraph()
+    run = p.add_run(text.upper())
+    set_run(run, 11, True, BLUE)
+    add_bottom_line(p, "1F4E79")
+    p.paragraph_format.space_before = Pt(10)
+    p.paragraph_format.space_after = Pt(4)
+    return p
 
-    if certifications:
-        lines += ["", "CERTIFICATIONS"] + [f"• {c}" for c in certifications]
 
-    if achievements:
-        lines += ["", "ACHIEVEMENTS"] + [f"• {a}" for a in achievements]
+def body_para(doc, text, size=10.5, bold=False, color=DARK, space_after=2):
+    p = doc.add_paragraph()
+    run = p.add_run(text)
+    set_run(run, size, bold, color)
+    p.paragraph_format.space_after = Pt(space_after)
+    p.paragraph_format.space_before = Pt(0)
+    return p
 
-    if languages:
-        lines += ["", "LANGUAGES", " • ".join(languages)]
 
-    lines += ["", "EDUCATION", data.get("education", "-")]
-    return "\n".join(lines)
+def bullet(doc, text):
+    p = doc.add_paragraph(style="List Bullet")
+    run = p.add_run(text)
+    set_run(run, 10.5, False, DARK)
+    p.paragraph_format.space_after = Pt(1)
+    p.paragraph_format.left_indent = Inches(0.15)
+    return p
+
+
+def title_date_line(doc, left_main, left_sub, right_date):
+    """Job/project title on left, date on right."""
+    p = doc.add_paragraph()
+    # left bold title
+    r1 = p.add_run(left_main)
+    set_run(r1, 10.5, True, DARK)
+    if left_sub:
+        r2 = p.add_run(f"  ·  {left_sub}")
+        set_run(r2, 10.5, False, GRAY)
+    # right date using tab
+    p.paragraph_format.tab_stops.add_tab_stop(Inches(6.5), WD_TAB_ALIGNMENT.RIGHT)
+    r3 = p.add_run(f"\t{right_date}" if right_date else "")
+    set_run(r3, 10, False, GRAY)
+    p.paragraph_format.space_after = Pt(1)
+    p.paragraph_format.space_before = Pt(4)
+    return p
+
+
+def parse_block_lines(text):
+    """
+    Format per line:
+    Title | Company/Type | Dates | bullet1; bullet2; bullet3
+    """
+    items = []
+    for line in (text or "").split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        parts = [p.strip() for p in line.split("|")]
+        while len(parts) < 4:
+            parts.append("")
+        title, org, dates, bullets = parts[0], parts[1], parts[2], parts[3]
+        bullet_list = [b.strip() for b in bullets.split(";") if b.strip()]
+        items.append({"title": title, "org": org, "dates": dates, "bullets": bullet_list})
+    return items
 
 
 def export_docx(data) -> bytes:
-    text = build_resume_text(data)
     doc = Document()
-
     section = doc.sections[0]
-    section.top_margin = Inches(0.6)
-    section.bottom_margin = Inches(0.6)
+    section.top_margin = Inches(0.5)
+    section.bottom_margin = Inches(0.5)
     section.left_margin = Inches(0.7)
     section.right_margin = Inches(0.7)
 
-    lines = text.split("\n")
-    # Name
-    p = doc.add_paragraph()
-    run = p.add_run(lines[0] if lines else "RESUME")
-    run.bold = True
-    run.font.size = Pt(18)
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    # ===== HEADER =====
+    name_p = doc.add_paragraph()
+    name_run = name_p.add_run((data.get("name") or "YOUR NAME").upper())
+    set_run(name_run, 22, True, BLUE)
+    name_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    name_p.paragraph_format.space_after = Pt(2)
 
-    # Contact line
-    if len(lines) > 1:
-        p2 = doc.add_paragraph(lines[1])
-        p2.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        for r in p2.runs:
-            r.font.size = Pt(10)
+    role_p = doc.add_paragraph()
+    role_run = role_p.add_run(data.get("headline") or data.get("role") or "")
+    set_run(role_run, 10.5, False, DARK)
+    role_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    role_p.paragraph_format.space_after = Pt(2)
 
-    section_titles = {
-        "PROFESSIONAL SUMMARY", "TECHNICAL SKILLS", "SOFT SKILLS", "PROJECTS",
-        "EXPERIENCE", "CERTIFICATIONS", "ACHIEVEMENTS", "LANGUAGES", "EDUCATION"
-    }
+    contact_bits = []
+    for key in ["location", "phone", "email", "linkedin", "github", "portfolio"]:
+        val = (data.get(key) or "").strip()
+        if val:
+            contact_bits.append(val)
+    contact_p = doc.add_paragraph()
+    contact_run = contact_p.add_run("  ·  ".join(contact_bits))
+    set_run(contact_run, 9.5, False, GRAY)
+    contact_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    contact_p.paragraph_format.space_after = Pt(8)
 
-    for line in lines[2:]:
-        if not line.strip():
+    # ===== OBJECTIVE =====
+    objective = (data.get("summary") or "").strip()
+    if not objective:
+        objective = (
+            f"Motivated student targeting {data.get('role') or 'software'} roles, "
+            f"with hands-on project experience and strong communication skills."
+        )
+    section_heading(doc, "Objective")
+    body_para(doc, objective, 10.5)
+
+    # ===== SKILLS =====
+    section_heading(doc, "Skills")
+    skills_map = [
+        ("Technical", data.get("skills", "")),
+        ("Tools", data.get("tools", "")),
+        ("Soft Skills", data.get("soft_skills", "")),
+        ("Languages", data.get("languages", "")),
+    ]
+    for label, value in skills_map:
+        value = (value or "").strip()
+        if not value:
             continue
-        if line.strip() in section_titles:
-            p = doc.add_paragraph()
-            run = p.add_run(line.strip())
-            run.bold = True
-            run.font.size = Pt(12)
-        else:
-            p = doc.add_paragraph(line)
-            for r in p.runs:
-                r.font.size = Pt(10)
+        p = doc.add_paragraph()
+        r1 = p.add_run(f"{label}: ")
+        set_run(r1, 10.5, True, BLUE)
+        r2 = p.add_run(value)
+        set_run(r2, 10.5, False, DARK)
+        p.paragraph_format.space_after = Pt(2)
+
+    # ===== EXPERIENCE =====
+    exp_items = parse_block_lines(data.get("experience", ""))
+    section_heading(doc, "Experience")
+    if exp_items:
+        for item in exp_items:
+            title_date_line(doc, item["title"], item["org"], item["dates"])
+            for b in item["bullets"]:
+                bullet(doc, b)
+    else:
+        body_para(doc, "Fresher | Academic and personal projects", 10.5, color=GRAY)
+
+    # ===== PROJECTS =====
+    project_items = parse_block_lines(data.get("projects", ""))
+    if project_items:
+        section_heading(doc, "Projects")
+        for item in project_items:
+            title_date_line(doc, item["title"], item["org"], item["dates"])
+            for b in item["bullets"]:
+                bullet(doc, b)
+
+    # ===== EDUCATION =====
+    edu_items = parse_block_lines(data.get("education", ""))
+    if edu_items:
+        section_heading(doc, "Education")
+        for item in edu_items:
+            title_date_line(doc, item["title"], item["org"], item["dates"])
+            for b in item["bullets"]:
+                # italic-like secondary detail
+                p = doc.add_paragraph()
+                run = p.add_run(b)
+                set_run(run, 10, False, GRAY)
+                p.paragraph_format.space_after = Pt(1)
+
+    # ===== ACHIEVEMENTS =====
+    achievements = [a.strip() for a in (data.get("achievements") or "").split("\n") if a.strip()]
+    if achievements:
+        section_heading(doc, "Achievements & Certifications")
+        body_para(doc, "  ·  ".join(achievements), 10.5)
+
+    # ===== ADDITIONAL =====
+    additional_parts = []
+    if data.get("availability"):
+        additional_parts.append(f"Availability: {data.get('availability')}")
+    if data.get("interests"):
+        additional_parts.append(f"Interests: {data.get('interests')}")
+    if data.get("references"):
+        additional_parts.append(f"References: {data.get('references')}")
+    if additional_parts:
+        section_heading(doc, "Additional")
+        body_para(doc, "  ".join(additional_parts), 10.5)
 
     buffer = BytesIO()
     doc.save(buffer)
     buffer.seek(0)
     return buffer.read()
-
-
-class ResumePDF(FPDF):
-    def header(self):
-        pass
-
-    def footer(self):
-        self.set_y(-12)
-        self.set_font("Helvetica", "I", 8)
-        self.set_text_color(120, 120, 120)
-        self.cell(0, 8, "Generated by AI Resume Studio", align="C")
-
-
-def export_pdf(data) -> bytes:
-    text = build_resume_text(data)
-    pdf = ResumePDF()
-    pdf.set_auto_page_break(auto=True, margin=14)
-    pdf.add_page()
-    pdf.set_margins(16, 14, 16)
-
-    lines = text.split("\n")
-    # Name
-    pdf.set_font("Helvetica", "B", 18)
-    pdf.set_text_color(20, 20, 20)
-    pdf.multi_cell(0, 9, lines[0] if lines else "RESUME", align="C")
-
-    if len(lines) > 1:
-        pdf.set_font("Helvetica", "", 10)
-        pdf.set_text_color(70, 70, 70)
-        pdf.multi_cell(0, 6, lines[1], align="C")
-        pdf.ln(2)
-
-    section_titles = {
-        "PROFESSIONAL SUMMARY", "TECHNICAL SKILLS", "SOFT SKILLS", "PROJECTS",
-        "EXPERIENCE", "CERTIFICATIONS", "ACHIEVEMENTS", "LANGUAGES", "EDUCATION"
-    }
-
-    for line in lines[2:]:
-        if not line.strip():
-            pdf.ln(1)
-            continue
-        if line.strip() in section_titles:
-            pdf.ln(2)
-            pdf.set_font("Helvetica", "B", 12)
-            pdf.set_text_color(30, 64, 175)
-            pdf.multi_cell(0, 7, line.strip())
-            pdf.set_draw_color(180, 180, 180)
-            pdf.line(16, pdf.get_y(), 194, pdf.get_y())
-            pdf.ln(2)
-        else:
-            pdf.set_font("Helvetica", "", 10)
-            pdf.set_text_color(30, 30, 30)
-            # FPDF needs latin-1 safe text; replace unsupported chars
-            safe = line.encode("latin-1", "replace").decode("latin-1")
-            pdf.multi_cell(0, 6, safe)
-
-    return bytes(pdf.output())
