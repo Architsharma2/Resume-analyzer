@@ -373,4 +373,4 @@ else:
     st.write("Auto mode, manual mode, optional photo, 3 formats, analyzer + tips.")
 
 st.markdown("---")
-st.caption("AI Resume Studio | For every student | BCA Final Year Project")
+st.caption("AI Resume Studio | For every student | Archit sharma")
