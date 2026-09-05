@@ -26,3 +26,8 @@ This project analyzes a resume against a job description and gives:
    ```bash
    pip install -r requirements.txt
    python -m spacy download en_core_web_sm
+
+## How to run (Windows)
+1. Install Python 3.10+
+2. Run setup.bat (first time)
+3. Run "Run App.bat"

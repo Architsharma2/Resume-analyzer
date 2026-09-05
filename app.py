@@ -5,430 +5,372 @@ from utils.extractor import extract_basic_info
 from utils.scorer import get_feedback, format_skills
 from utils.resume_export import export_docx
 
-st.set_page_config(
-    page_title="AI Resume Studio",
-    page_icon="📄",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+st.set_page_config(page_title="AI Resume Studio", page_icon="📄", layout="wide")
 
-# =========================
-# GLASS UI + MOBILE FRIENDLY
-# =========================
 st.markdown("""
 <style>
-  .stApp {
-    background:
-      radial-gradient(circle at 0% 0%, rgba(56,189,248,0.18), transparent 35%),
-      radial-gradient(circle at 100% 0%, rgba(99,102,241,0.16), transparent 30%),
-      linear-gradient(160deg, #0b1220 0%, #0f172a 50%, #020617 100%);
-    color: #e5e7eb;
-  }
-
-  h1, h2, h3, h4 { color: #f8fafc !important; }
-
-  .hero {
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.14);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border-radius: 18px;
-    padding: 18px 18px;
-    margin-bottom: 14px;
-  }
-
-  .glass-card {
-    background: rgba(255,255,255,0.07);
-    border: 1px solid rgba(255,255,255,0.13);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.22);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 16px;
-    padding: 14px 16px;
-    margin-bottom: 10px;
-  }
-
-  .skill-chip {
-    display: inline-block;
-    padding: 6px 12px;
-    margin: 4px;
-    border-radius: 999px;
-    font-size: 13px;
-    font-weight: 600;
-  }
-  .chip-ok { background: rgba(34,197,94,0.16); color:#4ade80; border:1px solid rgba(34,197,94,0.35); }
-  .chip-missing { background: rgba(239,68,68,0.16); color:#f87171; border:1px solid rgba(239,68,68,0.35); }
-  .chip-extra { background: rgba(59,130,246,0.16); color:#60a5fa; border:1px solid rgba(59,130,246,0.35); }
-  .chip-tip { background: rgba(250,204,21,0.14); color:#fde047; border:1px solid rgba(250,204,21,0.3); }
-
-  /* Glass buttons */
-  .stButton > button {
-    background: rgba(255,255,255,0.08) !important;
-    color: #f8fafc !important;
-    border: 1px solid rgba(255,255,255,0.18) !important;
-    border-radius: 14px !important;
-    font-weight: 700 !important;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.2);
-    transition: 0.2s ease;
-  }
-  .stButton > button:hover {
-    background: rgba(56,189,248,0.18) !important;
-    border-color: rgba(56,189,248,0.45) !important;
-    transform: translateY(-1px);
-  }
-
-  div[data-testid="stSidebar"] {
-    background: rgba(2,6,23,0.92);
-    border-right: 1px solid rgba(255,255,255,0.08);
-  }
-
-  .hint {
-    color: #93c5fd;
-    font-size: 0.86rem;
-    margin: 0 0 8px 0;
-  }
-
-  @media (max-width: 768px) {
-    .hero { padding: 14px; border-radius: 14px; }
-    .glass-card { padding: 12px; }
-  }
+.stApp {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(59,130,246,.28), transparent 32%),
+    radial-gradient(circle at 95% 0%, rgba(168,85,247,.18), transparent 28%),
+    linear-gradient(160deg,#07111f,#0b1730 50%,#020617);
+  color:#eaf0ff;
+}
+h1,h2,h3 { color:#f8fbff !important; }
+.hero {
+  background: linear-gradient(135deg, rgba(59,130,246,.22), rgba(99,102,241,.12));
+  border:1px solid rgba(147,197,253,.28);
+  border-radius:18px; padding:18px 20px; margin-bottom:14px;
+  backdrop-filter: blur(14px);
+}
+.glass {
+  background: rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:16px; padding:14px 16px; margin-bottom:10px;
+  backdrop-filter: blur(12px);
+}
+.skill-chip {display:inline-block;padding:6px 12px;margin:4px;border-radius:999px;font-size:13px;font-weight:700;}
+.chip-ok {background:rgba(34,197,94,.16);color:#4ade80;border:1px solid rgba(34,197,94,.35);}
+.chip-missing {background:rgba(239,68,68,.16);color:#f87171;border:1px solid rgba(239,68,68,.35);}
+.chip-extra {background:rgba(59,130,246,.16);color:#60a5fa;border:1px solid rgba(59,130,246,.35);}
+.chip-tip {background:rgba(250,204,21,.14);color:#fde68a;border:1px solid rgba(250,204,21,.28);}
+.stButton > button {
+  background: linear-gradient(135deg,#2563eb,#3b82f6)!important;
+  color:#fff!important; border:1px solid rgba(147,197,253,.45)!important;
+  border-radius:14px!important; font-weight:800!important;
+  box-shadow:0 8px 22px rgba(37,99,235,.35);
+}
+div[data-testid="stSidebar"] {
+  background: linear-gradient(180deg,#0a1628,#07101d);
+  border-right:1px solid rgba(59,130,246,.25);
+}
+.hint {color:#93c5fd;font-size:.86rem;margin-bottom:8px;}
+.friendly {
+  background: rgba(16,185,129,.12);
+  border:1px solid rgba(52,211,153,.25);
+  border-radius:14px; padding:12px 14px; margin-bottom:12px;
+}
 </style>
 """, unsafe_allow_html=True)
 
 SAMPLE_JDS = {
     "AI Developer": "Required: Python, Machine Learning, NLP, Pandas, NumPy, REST API, Git, communication. Nice: TensorFlow, PyTorch, FastAPI, AWS.",
-    "Full Stack Developer": "Required: Python, JavaScript, React, HTML, CSS, SQL, Git, Firebase, REST API, communication. Nice: Node.js, MongoDB, Docker.",
-    "Web Developer": "Required: HTML, CSS, JavaScript, Firebase, Git, GitHub, communication. Nice: React, Python, UI design."
+    "Full Stack Developer": "Required: Python, JavaScript, React, HTML, CSS, SQL, Git, Firebase, REST API, communication.",
+    "Web Developer": "Required: HTML, CSS, JavaScript, Firebase, Git, GitHub, communication. Nice: React, Python.",
+    "Data Analyst": "Required: Excel, SQL, Python, Pandas, Data Analysis, Power BI, communication."
 }
 
-ROLE_SKILLS = {
-    "AI Developer": "Python, Machine Learning, NLP, Pandas, NumPy, REST API, Git, Communication",
-    "Full Stack Developer": "Python, JavaScript, React, HTML, CSS, SQL, Git, Firebase, REST API",
-    "Web Developer": "HTML, CSS, JavaScript, Firebase, Git, GitHub, Communication"
+ROLE_PACKS = {
+    "AI Developer": {
+        "headline": "Student · AI / ML Enthusiast",
+        "skills": "Python, Machine Learning, NLP, Pandas, NumPy, REST API, Git, Data Analysis",
+        "tools": "VS Code, Jupyter, GitHub, Google Colab",
+        "soft": "Communication, Problem Solving, Teamwork, Willingness to Learn",
+        "summary": "Motivated student exploring AI and practical Python projects. Eager to learn, build, and contribute in an internship or fresher AI role.",
+        "projects": "AI Resume Studio | Personal Project | 2026 | Built resume analyzer using Python and Streamlit.; Added skill-gap analysis and DOCX export."
+    },
+    "Full Stack Developer": {
+        "headline": "Student · Full Stack Developer Aspirant",
+        "skills": "Python, JavaScript, React, HTML, CSS, SQL, Git, Firebase, REST API",
+        "tools": "VS Code, GitHub, Postman, Firebase",
+        "soft": "Communication, Problem Solving, Teamwork, Time Management",
+        "summary": "Student building web apps with frontend and backend tools. Looking for full-stack internship opportunities to grow through real work.",
+        "projects": "College Portal | Academic Project | 2025 | Built login and dashboard features.; Used Firebase and responsive UI."
+    },
+    "Web Developer": {
+        "headline": "Student · Web Developer",
+        "skills": "HTML5, CSS3, JavaScript, Firebase, Git, GitHub",
+        "tools": "VS Code, MS Office, Firebase Console",
+        "soft": "Communication, Team Collaboration, Time Management",
+        "summary": "Web development student with hands-on practice in HTML, CSS and JavaScript. Focused on clean UI and practical project building.",
+        "projects": "Personal Portfolio | Personal Project | 2026 | Created responsive portfolio website.; Added project showcase and contact section."
+    },
+    "Data Analyst": {
+        "headline": "Student · Data Analyst Aspirant",
+        "skills": "Excel, SQL, Python, Pandas, Data Analysis, Power BI, Communication",
+        "tools": "Excel, Power BI, Google Sheets",
+        "soft": "Communication, Attention to Detail, Problem Solving",
+        "summary": "Student interested in data analysis using Excel, SQL and Python. Seeking internship opportunities to practice dashboards and insights.",
+        "projects": "Sales Insights Dashboard | Academic Project | 2025 | Cleaned sample data and built basic dashboard.; Practiced charts and KPI summary."
+    },
+    "General Fresher": {
+        "headline": "Student · Fresher",
+        "skills": "MS Office, Communication, Internet Research, Basic Computer Skills",
+        "tools": "MS Word, MS Excel, PowerPoint, Google Workspace",
+        "soft": "Communication, Teamwork, Time Management, Willingness to Learn",
+        "summary": "Dedicated student and fresher ready to learn quickly, work hard, and contribute to team goals in an entry-level role.",
+        "projects": "Academic Assignments & Presentations | College Work | 2024-2026 | Completed coursework projects and presentations.; Practiced teamwork and deadlines."
+    }
 }
+
 
 def safe_skill_gap(resume_text, jd):
     result = get_skill_gap(resume_text, jd)
-    if len(result) == 3:
-        return result
-    return result[0], result[1], []
+    return result if len(result) == 3 else (result[0], result[1], [])
+
 
 def suggest_improvements(score, missing, basic_info, resume_text):
     tips = []
-
-    if basic_info.get("email") in [None, "", "Not found"]:
-        tips.append("Add a professional email at the top of your resume.")
-    if basic_info.get("phone") in [None, "", "Not found"]:
-        tips.append("Add your phone number near the header.")
+    if basic_info.get("email") in ["", "Not found", None]:
+        tips.append("Add a clear email at the top.")
+    if basic_info.get("phone") in ["", "Not found", None]:
+        tips.append("Add your phone number.")
     if missing:
-        tips.append("Add these missing skills if you know them: " + ", ".join(missing[:5]) + ".")
-        tips.append("Use the same skill words from the job description in Projects and Skills.")
-    if score < 50:
-        tips.append("Rewrite your objective for this exact job role.")
-        tips.append("Add 2–3 project bullet points with tools and results.")
-    elif score < 75:
-        tips.append("Improve project lines with impact (what you built + tools used).")
-        tips.append("Keep skills section clean and role-focused.")
+        tips.append("If you know these, add them: " + ", ".join(missing[:5]) + ".")
+    if score < 55:
+        tips.append("Rewrite objective for this exact job.")
+        tips.append("Add 2 project points with tools you used.")
     else:
-        tips.append("Strong match. Keep formatting clean and consistent.")
-
-    text_l = (resume_text or "").lower()
-    if "project" not in text_l:
-        tips.append("Add a Projects section with 2 strong projects.")
-    if "experience" not in text_l and "intern" not in text_l:
-        tips.append("If you have internship/freelance work, add an Experience section.")
-    if len(resume_text or "") < 500:
-        tips.append("Your resume looks short. Add more detail to projects and experience.")
-
-    # unique tips
-    final = []
+        tips.append("Good start. Keep skills matched to the JD.")
+    if len(resume_text or "") < 450:
+        tips.append("Add a bit more detail in projects/education.")
+    out = []
     for t in tips:
-        if t not in final:
-            final.append(t)
-    return final[:7]
+        if t not in out:
+            out.append(t)
+    return out[:7]
+
+
+def detect_role_from_text(text: str) -> str:
+    t = (text or "").lower()
+    if any(k in t for k in ["machine learning", "ai developer", "nlp", "deep learning", "data scientist"]):
+        return "AI Developer"
+    if any(k in t for k in ["full stack", "fullstack", "react", "node.js", "frontend", "backend"]):
+        return "Full Stack Developer"
+    if any(k in t for k in ["data analyst", "power bi", "excel", "sql analyst"]):
+        return "Data Analyst"
+    if any(k in t for k in ["web developer", "html", "css", "javascript", "website"]):
+        return "Web Developer"
+    return "General Fresher"
+
+
+def auto_from_job(job_text, name, email, phone, location, style):
+    role = detect_role_from_text(job_text)
+    pack = ROLE_PACKS[role]
+    base_skills = [s.strip() for s in pack["skills"].split(",")]
+    job_l = job_text.lower()
+    extra = []
+    for skill in ["python", "java", "javascript", "react", "html", "css", "sql", "excel",
+                  "firebase", "git", "docker", "aws", "pandas", "machine learning", "communication"]:
+        if skill in job_l and skill not in ",".join(base_skills).lower():
+            extra.append("SQL" if skill == "sql" else skill.title())
+    skills = ", ".join(base_skills + extra[:6])
+    return {
+        "name": name, "email": email, "phone": phone, "location": location,
+        "headline": pack["headline"], "role": role, "style": style,
+        "linkedin": "LinkedIn", "github": "GitHub", "portfolio": "",
+        "summary": pack["summary"] + " This resume is tailored toward the provided job description.",
+        "skills": skills, "tools": pack["tools"], "soft_skills": pack["soft"],
+        "languages": "English, Hindi",
+        "experience": "Student / Fresher | Academic & Personal Work | Present | Focused on learning by building practical projects.; Ready for internship responsibilities.",
+        "projects": pack["projects"],
+        "education": "Your Degree | Your College / School | Year | Add your stream and key subjects",
+        "achievements": "Academic coursework completed\nCertificates (add if any)\nProjects completed",
+        "availability": "Immediate — internship / full-time / part-time / remote",
+        "interests": "Learning, projects, teamwork",
+        "references": "Available on request"
+    }
+
 
 with st.sidebar:
     st.markdown("### AI Resume Studio")
-    st.caption("Simple for every student")
-    page = st.radio(
-        "Choose page",
-        ["Home", "Analyze Resume", "Make Resume", "Improvement Tips", "About"],
-        label_visibility="collapsed"
-    )
+    st.caption("For every student — school, college, fresher")
+    page = st.radio("Navigation", ["Analyze Resume", "Make Resume", "About"], index=0, label_visibility="collapsed")
     st.markdown("---")
-    st.markdown("**Quick help**")
-    st.write("1. Make Resume")
-    st.write("2. Download DOCX")
-    st.write("3. Analyze Resume")
+    st.write("No fancy background needed. Clear details + honest projects are enough.")
 
-# ================= HOME =================
-if page == "Home":
-    st.markdown("""
-    <div class="hero">
-      <h1>AI Resume Studio</h1>
-      <p>Easy tools for school, college, and final-year students. Build a clean resume, check job match, and get improvement tips.</p>
-    </div>
-    """, unsafe_allow_html=True)
 
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown("<div class='glass-card'><h3>Analyze</h3><p>Upload resume + job description and get score, matched skills, missing skills.</p></div>", unsafe_allow_html=True)
-    with c2:
-        st.markdown("<div class='glass-card'><h3>Make Resume</h3><p>Fill simple form and download a clean professional DOCX resume.</p></div>", unsafe_allow_html=True)
-    with c3:
-        st.markdown("<div class='glass-card'><h3>Improve</h3><p>Get clear suggestions to make your resume stronger for the job.</p></div>", unsafe_allow_html=True)
+if page == "Analyze Resume":
+    st.markdown('<div class="hero"><h1>Resume Analyzer</h1><p>Upload resume + job description. Get score, skills and simple improvement tips.</p></div>', unsafe_allow_html=True)
+    tab1, tab2, tab3 = st.tabs(["Analyze", "Improvements", "Extracted Text"])
 
-    st.markdown("### Start here")
-    s1, s2, s3 = st.columns(3)
-    if s1.button("Go to Analyze", use_container_width=True):
-        st.session_state["force_page"] = "Analyze Resume"
-        st.rerun()
-    if s2.button("Go to Make Resume", use_container_width=True):
-        st.session_state["force_page"] = "Make Resume"
-        st.rerun()
-    if s3.button("Go to Tips", use_container_width=True):
-        st.session_state["force_page"] = "Improvement Tips"
-        st.rerun()
+    with tab1:
+        left, right = st.columns([1.2, 1])
+        with left:
+            st.markdown("<div class='glass'>", unsafe_allow_html=True)
+            uploaded = st.file_uploader("Upload Resume (PDF/DOCX)", type=["pdf", "docx"])
+            jd_choice = st.selectbox("Sample JD", ["Custom"] + list(SAMPLE_JDS.keys()))
+            if jd_choice != "Custom":
+                st.session_state["jd"] = SAMPLE_JDS[jd_choice]
+            jd = st.text_area("Job Description", value=st.session_state.get("jd", SAMPLE_JDS["Web Developer"]), height=150)
+            st.session_state["jd"] = jd
+            b1, b2 = st.columns(2)
+            analyze = b1.button("Analyze Now", use_container_width=True)
+            clear = b2.button("Clear", use_container_width=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+        with right:
+            st.markdown("<div class='glass'><h4>Result</h4>", unsafe_allow_html=True)
+            if st.session_state.get("done"):
+                st.metric("Match Score", f"{st.session_state['score']}%")
+                st.progress(min(st.session_state["score"] / 100, 1.0))
+            else:
+                st.info("Result will appear here.")
+            st.markdown("</div>", unsafe_allow_html=True)
 
-# ================= ANALYZE =================
-elif page == "Analyze Resume":
-    st.markdown("""
-    <div class="hero">
-      <h1>Analyze Resume</h1>
-      <p>Upload your resume and paste a job description. Get match score and skill gaps in one click.</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    left, right = st.columns([1.15, 1])
-    with left:
-        st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-        uploaded = st.file_uploader("Step 1: Upload Resume (PDF or DOCX)", type=["pdf", "docx"])
-        jd_choice = st.selectbox("Step 2: Load sample job (optional)", ["Custom"] + list(SAMPLE_JDS.keys()))
-        if jd_choice != "Custom":
-            st.session_state["jd"] = SAMPLE_JDS[jd_choice]
-        jd = st.text_area("Step 3: Job Description", value=st.session_state.get("jd", SAMPLE_JDS["Web Developer"]), height=150)
-        st.session_state["jd"] = jd
-        b1, b2, b3 = st.columns(3)
-        analyze = b1.button("Analyze Now", use_container_width=True, type="primary")
-        clear = b2.button("Clear Result", use_container_width=True)
-        show = b3.button("Show Resume Text", use_container_width=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with right:
-        st.markdown("<div class='glass-card'><h4>Result</h4>", unsafe_allow_html=True)
-        if st.session_state.get("done"):
-            st.metric("Match Score", f"{st.session_state['score']}%")
-            st.progress(min(st.session_state["score"] / 100, 1.0))
-            st.caption(st.session_state["feedback"]["level"])
-        else:
-            st.info("Your result will appear here.")
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    if clear:
-        for k in ["done", "text", "score", "matched", "missing", "extra", "info", "feedback", "tips"]:
-            st.session_state.pop(k, None)
-        st.rerun()
-
-    if analyze:
-        if not uploaded:
-            st.warning("Please upload a resume first.")
-        elif not jd.strip():
-            st.warning("Please paste a job description.")
-        else:
-            with st.spinner("Analyzing your resume..."):
-                text = extract_text(uploaded)
-                score = get_match_score(text, jd)
-                matched, missing, extra = safe_skill_gap(text, jd)
-                info = extract_basic_info(text)
-                feedback = get_feedback(score, missing)
-                tips = suggest_improvements(score, missing, info, text)
-                st.session_state.update(
-                    done=True, text=text, score=score, matched=matched, missing=missing,
-                    extra=extra, info=info, feedback=feedback, tips=tips
-                )
-            st.success("Analysis complete")
+        if clear:
+            for k in ["done", "text", "score", "matched", "missing", "extra", "info", "feedback", "tips"]:
+                st.session_state.pop(k, None)
             st.rerun()
 
-    if st.session_state.get("done"):
-        info = st.session_state["info"]
-        c1, c2, c3 = st.columns(3)
-        c1.markdown(f"<div class='glass-card'><b>Name</b><br>{info.get('name','Not found')}</div>", unsafe_allow_html=True)
-        c2.markdown(f"<div class='glass-card'><b>Email</b><br>{info.get('email','Not found')}</div>", unsafe_allow_html=True)
-        c3.markdown(f"<div class='glass-card'><b>Phone</b><br>{info.get('phone','Not found')}</div>", unsafe_allow_html=True)
+        if analyze:
+            if not uploaded:
+                st.warning("Please upload a resume.")
+            elif not jd.strip():
+                st.warning("Please paste a job description.")
+            else:
+                with st.spinner("Analyzing..."):
+                    text = extract_text(uploaded)
+                    score = get_match_score(text, jd)
+                    matched, missing, extra = safe_skill_gap(text, jd)
+                    info = extract_basic_info(text)
+                    feedback = get_feedback(score, missing)
+                    tips = suggest_improvements(score, missing, info, text)
+                    st.session_state.update(
+                        done=True, text=text, score=score, matched=matched, missing=missing,
+                        extra=extra, info=info, feedback=feedback, tips=tips
+                    )
+                st.rerun()
 
-        st.markdown("### Skills")
-        s1, s2, s3 = st.columns(3)
-        with s1:
-            st.markdown("**Matched**")
-            st.markdown("".join([f"<span class='skill-chip chip-ok'>{s}</span>" for s in st.session_state["matched"]]) or "None", unsafe_allow_html=True)
-        with s2:
-            st.markdown("**Missing**")
-            st.markdown("".join([f"<span class='skill-chip chip-missing'>{s}</span>" for s in st.session_state["missing"]]) or "None", unsafe_allow_html=True)
-        with s3:
-            st.markdown("**Extra**")
-            st.markdown("".join([f"<span class='skill-chip chip-extra'>{s}</span>" for s in st.session_state["extra"]]) or "None", unsafe_allow_html=True)
+        if st.session_state.get("done"):
+            info = st.session_state["info"]
+            c1, c2, c3 = st.columns(3)
+            c1.markdown(f"<div class='glass'><b>Name</b><br>{info.get('name')}</div>", unsafe_allow_html=True)
+            c2.markdown(f"<div class='glass'><b>Email</b><br>{info.get('email')}</div>", unsafe_allow_html=True)
+            c3.markdown(f"<div class='glass'><b>Phone</b><br>{info.get('phone')}</div>", unsafe_allow_html=True)
+            s1, s2, s3 = st.columns(3)
+            with s1:
+                st.markdown("**Matched**")
+                st.markdown("".join([f"<span class='skill-chip chip-ok'>{s}</span>" for s in st.session_state["matched"]]) or "None", unsafe_allow_html=True)
+            with s2:
+                st.markdown("**Missing**")
+                st.markdown("".join([f"<span class='skill-chip chip-missing'>{s}</span>" for s in st.session_state["missing"]]) or "None", unsafe_allow_html=True)
+            with s3:
+                st.markdown("**Extra**")
+                st.markdown("".join([f"<span class='skill-chip chip-extra'>{s}</span>" for s in st.session_state["extra"]]) or "None", unsafe_allow_html=True)
+            st.write(st.session_state["feedback"]["message"])
 
-        st.markdown("### Feedback")
-        st.write(st.session_state["feedback"]["message"])
+    with tab2:
+        if not st.session_state.get("done"):
+            st.info("Analyze first to get personalized tips.")
+        else:
+            for tip in st.session_state.get("tips", []):
+                st.markdown(f"<div class='glass'><span class='skill-chip chip-tip'>Tip</span> {tip}</div>", unsafe_allow_html=True)
 
-        st.markdown("### Suggested Improvements")
-        for tip in st.session_state.get("tips", []):
-            st.markdown(f"<span class='skill-chip chip-tip'>{tip}</span>", unsafe_allow_html=True)
+    with tab3:
+        if st.session_state.get("text"):
+            st.text_area("Extracted Text", st.session_state["text"], height=300)
+        else:
+            st.info("No text yet.")
 
-        report = f"""Resume Analysis Report
-Score: {st.session_state['score']}%
-Name: {info.get('name')}
-Email: {info.get('email')}
-Phone: {info.get('phone')}
-Matched: {format_skills(st.session_state['matched'])}
-Missing: {format_skills(st.session_state['missing'])}
-Tips: {' | '.join(st.session_state.get('tips', []))}
-"""
-        st.download_button("Download Analysis Report", report, "analysis_report.txt", "text/plain", use_container_width=True)
-
-        if show:
-            st.text_area("Extracted Resume Text", st.session_state["text"], height=240)
-
-# ================= MAKE RESUME =================
 elif page == "Make Resume":
-    st.markdown("""
-    <div class="hero">
-      <h1>Make Resume</h1>
-      <p>Fill simple boxes. Generate a clean professional DOCX resume.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="hero"><h1>Make Resume</h1><p>Built for every student — not only top colleges. Honest skills + clear projects are enough.</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="friendly"><b>You belong here.</b> School student, college student, fresher, career switcher — use Auto mode or fill manually.</div>', unsafe_allow_html=True)
 
-    st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-    st.markdown("#### 1) Basic Info")
-    a1, a2, a3 = st.columns(3)
-    name = a1.text_input("Full Name", "Archit Sharma")
-    email = a2.text_input("Email", "archits243@gmail.com")
-    phone = a3.text_input("Phone", "+91 78478 07169")
-    b1, b2, b3 = st.columns(3)
-    location = b1.text_input("Location", "Kharagpur, WB")
-    headline = b2.text_input("Headline", "BCA (Honours) Student · Web Developer")
-    role = b3.selectbox("Target Role", list(ROLE_SKILLS.keys()))
+    mode = st.radio("Choose mode", ["Auto from Job / Request", "Fill Manually"], horizontal=True)
 
-    st.markdown("#### 2) Links")
-    c1, c2, c3 = st.columns(3)
-    linkedin = c1.text_input("LinkedIn", "LinkedIn")
-    github = c2.text_input("GitHub", "GitHub")
-    portfolio = c3.text_input("Portfolio", "")
+    st.markdown("#### Common details")
+    d1, d2, d3, d4 = st.columns(4)
+    name = d1.text_input("Your Name", "Your Name")
+    email = d2.text_input("Email", "you@email.com")
+    phone = d3.text_input("Phone", "+91 9000000000")
+    location = d4.text_input("Location", "Your City")
 
-    st.markdown("#### 3) Objective & Skills")
-    summary = st.text_area("Objective", "Motivated student with project and internship experience, seeking a fresher role to learn and contribute.", height=80)
-    if st.button("Auto-fill skills for role", use_container_width=True):
-        st.session_state["skills_auto"] = ROLE_SKILLS[role]
-        st.rerun()
-    skills = st.text_input("Technical Skills", st.session_state.get("skills_auto", ROLE_SKILLS[role]))
-    tools = st.text_input("Tools", "VS Code, GitHub, MS Office")
-    soft_skills = st.text_input("Soft Skills", "Communication, Teamwork, Time Management")
-    languages = st.text_input("Languages", "English, Hindi")
+    style = st.selectbox(
+        "Resume Format",
+        ["modern", "minimal", "classic"],
+        format_func=lambda x: {
+            "modern": "Modern (blue headings)",
+            "minimal": "Minimal (clean gray)",
+            "classic": "Classic (formal black)"
+        }[x]
+    )
 
-    st.markdown("#### 4) Experience / Projects / Education")
-    st.markdown('<div class="hint">Use format: Title | Company/Type | Dates | point1; point2</div>', unsafe_allow_html=True)
-    experience = st.text_area("Experience", "Web Development Intern | Company Name | 2025 | Built website using HTML & CSS.; Worked with team and fixed UI issues.", height=90)
-    projects = st.text_area("Projects", "AI Resume Studio | Personal Project | 2026 | Built resume analyzer using Python and Streamlit.; Added skill gap and DOCX export.", height=90)
-    education = st.text_area("Education", "BCA (Honours) | Your College | 2023-2026 | Relevant: DSA, OOP, Web Technologies", height=80)
-    achievements = st.text_area("Achievements", "Hackathon Medal\nInternship Certificate", height=70)
-    availability = st.text_input("Availability", "Immediate — internship / full-time / remote")
-    interests = st.text_input("Interests", "Web projects, AI tools, design")
-    references = st.text_input("References", "Available on request")
-    st.markdown("</div>", unsafe_allow_html=True)
+    photo = st.file_uploader("Optional Photo (JPG/PNG)", type=["jpg", "jpeg", "png"])
+    photo_bytes = photo.read() if photo is not None else None
 
-    g1, g2, g3 = st.columns(3)
-    gen = g1.button("Generate Resume", use_container_width=True, type="primary")
-    match = g2.button("Check Role Skills", use_container_width=True)
-    reset = g3.button("Reset Form", use_container_width=True)
+    if mode == "Auto from Job / Request":
+        st.markdown("<div class='glass'>", unsafe_allow_html=True)
+        st.markdown("#### Auto Create")
+        st.markdown('<div class="hint">Examples:<br>• I want an AI developer resume<br>• I want resume for this job: [paste full JD]</div>', unsafe_allow_html=True)
+        request_text = st.text_area(
+            "Write your request or paste job description",
+            placeholder="I want resume for this job:\nWe are hiring a Web Developer Intern. Required: HTML, CSS, JavaScript, Git...",
+            height=160
+        )
+        if st.button("Create Resume Automatically", use_container_width=True):
+            if not request_text.strip():
+                st.warning("Please type a request or paste a job description.")
+            else:
+                data = auto_from_job(request_text, name, email, phone, location, style)
+                st.session_state["generated_data"] = data
+                st.session_state["photo_bytes"] = photo_bytes
+                st.success(f"Auto resume created for: {data['role']} ({style} format)")
+        st.markdown("</div>", unsafe_allow_html=True)
+    else:
+        st.markdown("<div class='glass'>", unsafe_allow_html=True)
+        st.markdown("#### Manual Builder")
+        role = st.selectbox("Target Role", list(ROLE_PACKS.keys()))
+        if st.button("Load simple template for this role"):
+            pack = ROLE_PACKS[role]
+            st.session_state["m_summary"] = pack["summary"]
+            st.session_state["m_skills"] = pack["skills"]
+            st.session_state["m_tools"] = pack["tools"]
+            st.session_state["m_soft"] = pack["soft"]
+            st.session_state["m_projects"] = pack["projects"]
+            st.session_state["m_headline"] = pack["headline"]
+            st.rerun()
 
-    if reset:
-        st.session_state.pop("generated_data", None)
-        st.session_state.pop("skills_auto", None)
-        st.rerun()
+        headline = st.text_input("Headline", st.session_state.get("m_headline", ROLE_PACKS[role]["headline"]))
+        summary = st.text_area("Objective", st.session_state.get("m_summary", ROLE_PACKS[role]["summary"]), height=80)
+        skills = st.text_input("Technical Skills", st.session_state.get("m_skills", ROLE_PACKS[role]["skills"]))
+        tools = st.text_input("Tools", st.session_state.get("m_tools", ROLE_PACKS[role]["tools"]))
+        soft_skills = st.text_input("Soft Skills", st.session_state.get("m_soft", ROLE_PACKS[role]["soft"]))
+        languages = st.text_input("Languages", "English, Hindi")
+        linkedin = st.text_input("LinkedIn (optional)", "")
+        github = st.text_input("GitHub (optional)", "")
+        portfolio = st.text_input("Portfolio (optional)", "")
 
-    data = {
-        "name": name, "email": email, "phone": phone, "location": location,
-        "headline": headline, "role": role, "linkedin": linkedin, "github": github,
-        "portfolio": portfolio, "summary": summary, "skills": skills, "tools": tools,
-        "soft_skills": soft_skills, "languages": languages, "experience": experience,
-        "projects": projects, "education": education, "achievements": achievements,
-        "availability": availability, "interests": interests, "references": references
-    }
+        st.markdown('<div class="hint">Experience/Projects line format: Title | Company/Type | Dates | point1; point2</div>', unsafe_allow_html=True)
+        experience = st.text_area("Experience (optional for freshers)", "Student / Fresher | College & Personal Work | Present | Completed coursework and practical assignments.; Learning by building small projects.", height=90)
+        projects = st.text_area("Projects", st.session_state.get("m_projects", ROLE_PACKS[role]["projects"]), height=100)
+        education = st.text_area("Education", "Your Course | Your School/College | Year | Stream / key subjects", height=70)
+        achievements = st.text_area("Achievements / Certificates", "Any certificate\nAny competition / volunteer work", height=70)
+        availability = st.text_input("Availability", "Immediate — internship / full-time / part-time")
+        interests = st.text_input("Interests", "Learning, teamwork, technology")
+        references = st.text_input("References", "Available on request")
 
-    if gen:
-        st.session_state["generated_data"] = data
-        st.success("Resume generated")
-
-    if match:
-        user = [s.strip().lower() for s in skills.split(",") if s.strip()]
-        need = [s.strip().lower() for s in ROLE_SKILLS[role].split(",") if s.strip()]
-        matched = sorted(set(user) & set(need))
-        missing = sorted(set(need) - set(user))
-        coverage = round(len(matched) / len(need) * 100, 1) if need else 0
-        st.metric("Role Skill Coverage", f"{coverage}%")
-        st.progress(min(coverage/100, 1.0))
-        st.markdown("".join([f"<span class='skill-chip chip-ok'>{s.title()}</span>" for s in matched]) or "No matched skills", unsafe_allow_html=True)
-        st.markdown("".join([f"<span class='skill-chip chip-missing'>{s.title()}</span>" for s in missing]) or "No missing skills", unsafe_allow_html=True)
+        if st.button("Generate Resume from Form", use_container_width=True):
+            st.session_state["generated_data"] = {
+                "name": name, "email": email, "phone": phone, "location": location,
+                "headline": headline, "role": role, "style": style,
+                "linkedin": linkedin, "github": github, "portfolio": portfolio,
+                "summary": summary, "skills": skills, "tools": tools, "soft_skills": soft_skills,
+                "languages": languages, "experience": experience, "projects": projects,
+                "education": education, "achievements": achievements,
+                "availability": availability, "interests": interests, "references": references
+            }
+            st.session_state["photo_bytes"] = photo_bytes
+            st.success("Manual resume generated")
+        st.markdown("</div>", unsafe_allow_html=True)
 
     if st.session_state.get("generated_data"):
+        g = st.session_state["generated_data"]
+        g["style"] = style
+        st.markdown("<div class='glass'><h4>Download your resume</h4>", unsafe_allow_html=True)
+        st.write(f"Role: **{g.get('role')}** · Format: **{style}** · Photo: **{'Yes' if st.session_state.get('photo_bytes') else 'No'}**")
         st.download_button(
-            "Download DOCX Resume",
-            data=export_docx(st.session_state["generated_data"]),
+            "Download DOCX",
+            data=export_docx(g, st.session_state.get("photo_bytes")),
             file_name=f"{name.replace(' ', '_').lower()}_resume.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            use_container_width=True,
-            type="primary"
+            use_container_width=True
         )
-
-# ================= TIPS =================
-elif page == "Improvement Tips":
-    st.markdown("""
-    <div class="hero">
-      <h1>Improvement Tips</h1>
-      <p>Simple advice for students of all ages. First analyze a resume, then open this page.</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    if not st.session_state.get("done"):
-        st.info("Go to Analyze Resume first. After analysis, tips will appear here automatically.")
-        st.markdown("""
-        <div class="glass-card">
-        <b>General tips</b><br>
-        1. Keep resume to 1 page if possible.<br>
-        2. Use clear section headings.<br>
-        3. Add phone, email, LinkedIn.<br>
-        4. Write project points with tools used.<br>
-        5. Match skills with the job description.
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.metric("Your Match Score", f"{st.session_state['score']}%")
-        st.markdown("### Personalized suggestions")
-        for tip in st.session_state.get("tips", []):
-            st.markdown(f"<div class='glass-card'>{tip}</div>", unsafe_allow_html=True)
-
-        st.markdown("### Missing skills to consider")
-        st.markdown("".join([f"<span class='skill-chip chip-missing'>{s}</span>" for s in st.session_state.get("missing", [])]) or "None", unsafe_allow_html=True)
+        st.caption("Open in Word/Google Docs if you want tiny spacing edits.")
+        st.markdown("</div>", unsafe_allow_html=True)
 
 else:
-    st.markdown("""
-    <div class="hero">
-      <h1>About</h1>
-      <p>AI Resume Studio helps students create and improve resumes easily.</p>
-    </div>
-    """, unsafe_allow_html=True)
-    st.markdown("""
-    <div class="glass-card">
-    <b>Features</b><br>
-    - Resume analysis and skill gap<br>
-    - Clean DOCX resume builder<br>
-    - Improvement suggestions<br>
-    - Mobile + desktop friendly glass UI
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="hero"><h1>About</h1><p>Made for every student — simple, honest, practical resume help.</p></div>', unsafe_allow_html=True)
+    st.write("Auto mode, manual mode, optional photo, 3 formats, analyzer + tips.")
 
 st.markdown("---")
-st.caption("AI Resume Studio | BCA Final Year Project | Easy for every student")
+st.caption("AI Resume Studio | For every student | BCA Final Year Project")
